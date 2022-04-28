@@ -1,0 +1,7 @@
+aiohttp
+authlib
+fastapi
+httpx
+itsdangerous
+starlette
+uvicorn
