@@ -1,7 +1,7 @@
 import uvicorn
 
 from authlib.integrations.starlette_client import OAuth, OAuthError
-from fastapi import FastAPI, status
+from fastapi import FastAPI, HTTPException, status
 from starlette.config import Config
 from starlette.requests import Request
 
