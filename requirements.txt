@@ -1,7 +1,7 @@
-aiohttp
-authlib
-fastapi
-httpx
-itsdangerous
-starlette
-uvicorn
+aiohttp==3.8.3
+authlib==1.2.0
+fastapi==0.88.0
+httpx==0.23.1
+itsdangerous==2.1.2
+starlette==00.22.0
+uvicorn==0.20.0

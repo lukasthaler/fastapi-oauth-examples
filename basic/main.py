@@ -3,6 +3,7 @@ import uvicorn
 from authlib.integrations.starlette_client import OAuth, OAuthError
 from fastapi import FastAPI, HTTPException, status
 from starlette.config import Config
+from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 
 
@@ -13,12 +14,18 @@ SCOPE = 'identify'  # if you need more scopes, add them to the string (separated
 
 # in a productive app, DO NOT leave any of the following in your code
 # ACTION ITEM: replace these placeholders with your own values
-CLIENT_ID = 'YOUR CLIENT ID HERE'
-CLIENT_SECRET = 'YOUR CLIENT SECRET HERE'
+CLIENT_ID = 'YOUR DISCORD CLIENT ID HERE'
+CLIENT_SECRET = 'YOUR DISCORD CLIENT SECRET HERE'
+SESSION_SECRET = 'REPLACE WITH A PROPER SECRET OF YOUR CHOICE'
 
 
 # initialize the API
 app = FastAPI()
+
+
+# add session middleware (this is used internally by starlette to execute the authorization flow)
+app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET,
+                   max_age=60 * 60 * 24 * 7)  # one week, in seconds
 
 
 # configure OAuth client

@@ -5,7 +5,7 @@ The examples showcased here are built as concise and straight-to-the point as po
 
 
 # Prerequisites
-* These examples were built and tested using Python 3.9.12, but they should also work for lower versions provided the libraries are available
+* These examples were built and tested using Python 3.9.13, but they should also work for lower versions provided the libraries are available
 * Install the dependencies listed in `requirements.txt`. If you intend to run the `basic` example, you don't need to install `aiohttp`. `starlette` will be installed with `fastapi`, but I included it for clarity. `httpx` and `itsdangerous` are needed by `authlib`. Finally, `uvicorn` is used to serve the app. I chose to include running the app in the respective main files for ease of demonstration, but you'll probably want to run the app from the command line using some variation of `$ uvicorn main:app` in a productive environment.
 * Your OAuth2 flow will be rejected unless you have authorized the redirect URI you request the flow to be directed to after obtaining the authorization code from the user. To whitelist your endpoint, head to `https://discord.com/developers/applications/{YOUR APPLICATION ID}/oauth2/general` (if you don't have your application id at hand, go to `https://discord.com/developers/applications` and select your application, then click on OAuth2 in the left sidebar menu). Once there, under **Redirects**, hit the "Add another" button and enter `127.0.0.1:5000/auth` (if you have modified host, port or the endpoint name, adapt accordingly).
 
@@ -13,7 +13,7 @@ The examples showcased here are built as concise and straight-to-the point as po
 # Running these examples
 
 ### basic example
-To run the basic example, you need to update the `CLIENT_ID` (line 16) and `CLIENT_SECRET` (line 17) variables with values for your app. If you haven't already stored them somewhere safe, you can retrieve them from your discord developers page. After that, run `main.py`. You will see some log output like the below:
+To run the basic example, you need to update the `CLIENT_ID` (line 17), `CLIENT_SECRET` (line 18) and `SESSION_SECRET` (line 19) variables with values for your app. If you haven't already stored them somewhere safe, you can retrieve them from your discord developers page. After that, run `main.py`. You will see some log output like the below:
 ```
 INFO:     Started server process [XXX]
 INFO:     Waiting for application startup.
