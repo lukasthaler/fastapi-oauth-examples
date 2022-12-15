@@ -1,13 +1,24 @@
 # The OAuth2 authorization code flow using FastAPI
-This repository showcases two examples of how to implement the OAuth2 authorization code flow. The `basic` example contains the API routes needed to complete the OAuth2 authorization code flow. At the end, you'll be left with access and refresh tokens for the user and the scopes you requested. The `sessions` example expands on that with signed session cookies managed by `starlette`'s `SessionMiddleware`. These session cookies allow a client to authenticate using a cookie issued to them by your API service. Since the cookies are *signed*, you'll be able to verify if they have been tampered with (actually, `starlette` automatically does that for you, denying modified cookies a session and thus, authentication). This example then also showcases how to get the currently active user and how to restrict endpoints to logged-in users only.
+This repository showcases two examples of how to implement the OAuth2 authorization code flow and one example of the OAuth2 implicit grant flow.
 
-The examples showcased here are built as concise and straight-to-the point as possible, foregoing return models (using `pydantic`) and other advanced FastAPI features to put the spotlight on the OAuth2 flow. I will highlight some more advanced concepts in the **Extending these examples** section.
+The `basic` example contains the API routes needed to complete the OAuth2 authorization code flow. At the end, you'll be left with access and refresh tokens for the user and the scopes you requested.
+
+The `sessions` example expands on that with signed session cookies managed by `starlette`'s `SessionMiddleware`. These session cookies allow a client to authenticate using a cookie issued to them by your API service. Since the cookies are *signed*, you'll be able to verify if they have been tampered with (actually, `starlette` automatically does that for you, denying modified cookies a session and thus, authentication). This example then also showcases how to get the currently active user and how to restrict endpoints to logged-in users only.
+
+The `first_party` example implements the implicit grant flow. Please note that this flow is deprecated as of OAuth2.1. However, it is fine to implement this flow if you're going to be the only login authority, i.e. your users can only log in directly to your service, and you're not planning on using this as a third-party authorization provider for some other application. This example also showcases the use of API scopes to regulate access to endpoints.
+
+**NOTE**: The examples showcased here are built as concise and straight-to-the point as possible, foregoing return models (using `pydantic`) and other advanced FastAPI features to put the spotlight on the OAuth2 flow. I will highlight some more advanced concepts in the **Extending these examples** section.
 
 
 # Prerequisites
-* These examples were built and tested using Python 3.9.13, but they should also work for lower versions provided the libraries are available
-* Install the dependencies listed in `requirements.txt`. If you intend to run the `basic` example, you don't need to install `aiohttp`. `starlette` will be installed with `fastapi`, but I included it for clarity. `httpx` and `itsdangerous` are needed by `authlib`. Finally, `uvicorn` is used to serve the app. I chose to include running the app in the respective main files for ease of demonstration, but you'll probably want to run the app from the command line using some variation of `$ uvicorn main:app` in a productive environment.
-* Your OAuth2 flow will be rejected unless you have authorized the redirect URI you request the flow to be directed to after obtaining the authorization code from the user. To whitelist your endpoint, head to `https://discord.com/developers/applications/{YOUR APPLICATION ID}/oauth2/general` (if you don't have your application id at hand, go to `https://discord.com/developers/applications` and select your application, then click on OAuth2 in the left sidebar menu). Once there, under **Redirects**, hit the "Add another" button and enter `127.0.0.1:5000/auth` (if you have modified host, port or the endpoint name, adapt accordingly).
+* These examples were built and tested using Python 3.9.13, but they should also work for lower versions provided the libraries are available.
+* Install the dependencies listed in `requirements.txt`. The different examples each require a specific subset of the included libraries, see below for details. **All examples** need the following libraries to be installed: `fastapi` (for obvious reasons), `starlette` (this library will automatically be installed with `fastapi`, but I included it for clarity), `authlib` (to handle the OAuth2 flow), `httpx` and `itsdangerous` (required for `authlib ` to properly work), `uvicorn` (to serve the app). Additionally, the following libraries are necessary: 
+  * `basic` example: no further libraries need to be installed
+  * `sessions` example: `aiohttp` (asynchronous HTTP requests)
+  * `first_party` example: `python-jose` (JWT (Json Web Token) handling to make access tokens work), `python-multipart` (required to receive user input from a web form)
+
+  I chose to include running the app in the respective main files for ease of demonstration, but you'll probably want to run the app from the command line using some variation of `$ uvicorn main:app` in a productive environment.
+* Your OAuth2 flow for the `basic` and `sessions` examples will be rejected unless you have authorized the redirect URI you request the flow to be directed to after obtaining the authorization code from the user. To whitelist your endpoint, head to `https://discord.com/developers/applications/{YOUR APPLICATION ID}/oauth2/general` (if you don't have your application id at hand, go to `https://discord.com/developers/applications` and select your application, then click on OAuth2 in the left sidebar menu). Once there, under **Redirects**, hit the "Add another" button and enter `127.0.0.1:5000/auth` (if you have modified host, port or the endpoint name, adapt accordingly).
 
 
 # Running these examples
@@ -34,6 +45,23 @@ This means that the API is up and running. Now, navigate your web browser to htt
 
 ### sessions example
 To run the sessions example, you need to update the `CLIENT_ID`, `CLIENT_SECRET` and `SESSION_SECRET` (lines 22-24) variables with values for your app. After that, start the API as detailed in the basic example section. Don't head to http://127.0.0.1:5000/login straight away, however. First, visit http://127.0.0.1:5000/privileged. You'll be greeted with a "401 UNAUTHORIZED" error message because you need to be logged in to access this endpoint. Now, follow the same login process as the basic example. Instead of being displayed a token on success, you'll be redirected to `/users/me` and receive a JSON dump of your Discord information, including ID, name, discriminator and more. Also, if you inspect the cookies for your localhost, you will see that a session cookie has been set. This cookie contains an encoded version of the token from the basic example and is used by the `/users/me` endpoint to verify your identity and request your information from Discord. Finally, head to http://127.0.0.1:5000/privileged once more. Instead of the error, you will now see a message saying "Congratulations, you are logged in using Discord!".
+
+
+### first party example
+This example can be run as-is, no code modifications are required. Start the API by running `main.py`. To start off, head to http://127.0.0.1:5000/endpoint1 and http://127.0.0.1:5000/endpoint3. The first endpoint will greet you with a 401 Not Authorized error, the second will return a 200 response. If you have the ability to make HTTP requests (i.e. using a GUI like Postman or by using a command-line tool such as `curl`), please continue reading below. Otherwise, continue on to the "using the FastAPI swagger docs" section. 
+
+##### using HTTP requests
+Your next destination is http://127.0.0.1:5000/login. Provide any value for username and password, they are not validated in this example. For now, only check the first scope (`some.scope`) and leave the other two unchecked. Hit "Submit" and you'll be forwarded to http://127.0.0.1:5000/token and provided with an access token like the one below (if you're curious about the content of the token, you can decode it using a site like https://jwt.io):
+```
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3N1ZXIiOiJteWFwcCIsInVzZXJuYW1lIjoiam9obmRvZSIsInNjb3BlcyI6InNvbWUuc2NvcGUiLCJleHBpcmVzX2F0IjoxNjcxNzI3NTY5Ljc3Mzc4Mn0.A9H--COsYLKJyp0Bf-lGQMEUganmyVYTDxjnYQOA68M",
+  "token_type": "bearer"
+}
+```
+Copy the access token. You now have access to endpoint 1, but not to endpoint 2. To verify this, hit both endpoints using an authorization header (`Authorization: Bearer TOKEN`, where `TOKEN` is the access_token string you received). The first will respond with "Hello from endpoint 1" and the second will hit you with a 403 Forbidden error message. That's it. You have your own implicit grant OAuth2 flow. If you want to try out different scope settings, just return to the login page and generate a new access token.
+
+##### using the FastAPI swagger docs
+Head to http://127.0.0.1:5000/docs and hit the green "Authorize" button in the top right of the page. Fill the `username` and `password` fields with arbitrary values (they are not validated) and enable `some.scope` by clicking the checkbox left of it. Leave everything else unchanged and click "Authorize" and then "Close". Next, go to `/endpoint1`, expand the section and hit "Try it out", then hit "Execute". You will receive a "Hello from endpoint 1" message. If you repeat the same process for `/endpoint2`, you will be greeted with a 403 Forbidden error message. That's it. You have your own implicit grant OAuth2 flow. If you want to try out different scope settings, just return to the login page and generate a new access token.
 
 
 # Extending these examples
